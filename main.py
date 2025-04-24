@@ -19,7 +19,7 @@ client = gspread.authorize(creds)
 sheet_id = "17g9aiOf0mK63tWyIfevKaen_8K_vZXzn078zKjzhq9E"
 
 # Open the spreadsheet by ID and select the 'agricultores' sheet
-sheet = client.open_by_key(sheet_id).worksheet("agricultores")
+sheet = client.open_by_key(sheet_id).worksheet("Agricultores")
 
 # Get all records as a DataFrame
 data = sheet.get_all_records()
