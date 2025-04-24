@@ -6,27 +6,25 @@ This is a temporary script file.
 """
 
 import streamlit as st
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 import pandas as pd
-import numpy as np
 
-# App title
-st.title("🚀 Hello Streamlit! I am making a change")
+# Define scope and authorize with credentials.json
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+client = gspread.authorize(creds)
 
-# Welcome message
-st.write("This is your first Streamlit app. Let’s build something awesome together!")
+# Use the spreadsheet ID
+sheet_id = "17g9aiOf0mK63tWyIfevKaen_8K_vZXzn078zKjzhq9E"
 
-# Text input
-name = st.text_input("What's your name?")
+# Open the spreadsheet by ID and select the 'agricultores' sheet
+sheet = client.open_by_key(sheet_id).worksheet("agricultores")
 
-# Greet user
-if name:
-    st.success(f"Nice to meet you, {name}!")
+# Get all records as a DataFrame
+data = sheet.get_all_records()
+df = pd.DataFrame(data)
 
-# Create random data
-chart_data = pd.DataFrame(
-    np.random.randn(20, 3),
-    columns=["Metric A", "Metric B", "Metric C"]
-)
-
-# Show chart
-st.line_chart(chart_data)
+# Show in Streamlit
+st.title("Datos de Agricultores")
+st.dataframe(df)
