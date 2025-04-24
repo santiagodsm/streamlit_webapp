@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 
 # App title
-st.title("🚀 Hello Streamlit!")
+st.title("🚀 Hello Streamlit! I am making a change")
 
 # Welcome message
 st.write("This is your first Streamlit app. Let’s build something awesome together!")
