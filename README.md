@@ -14,6 +14,10 @@
    streamlit run main.py
    ```
 
+3. To enable Google Sheets integration, create a `.streamlit/secrets.toml` file
+   with your `gcp_service_account` credentials. Without this file the app will
+   run in read‑only mode and new entries will not be stored.
+
 ## 📁 Folder Structure
 
 - `main.py`: Your main Streamlit app.

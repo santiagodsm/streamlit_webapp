@@ -14,19 +14,43 @@ import pandas as pd
 # -------------------------------------
 @st.cache_resource
 def get_gspread_client():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_dict = st.secrets["gcp_service_account"]
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/drive",
+    ]
+    creds_dict = st.secrets.get("gcp_service_account")
+    if not creds_dict:
+        raise RuntimeError("Missing gcp_service_account credentials")
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     return gspread.authorize(creds)
 
-client = get_gspread_client()
-sheet_id = "17g9aiOf0mK63tWyIfevKaen_8K_vZXzn078zKjzhq9E"
-sheet = client.open_by_key(sheet_id).worksheet("Agricultores")
+try:
+    client = get_gspread_client()
+    sheet_id = "17g9aiOf0mK63tWyIfevKaen_8K_vZXzn078zKjzhq9E"
+    sheet = client.open_by_key(sheet_id).worksheet("Agricultores")
+except Exception as e:  # handle missing credentials during local development
+    sheet = None
+    st.warning(
+        "Google Sheets integration disabled. "
+        "Add credentials to .streamlit/secrets.toml to enable data storage."
+    )
 
 # -------------------------------------
 # 📥 LOAD DATA
 # -------------------------------------
 def load_agricultores():
+    if sheet is None:
+        return pd.DataFrame(
+            columns=[
+                "Clave",
+                "Agricultor",
+                "Zona",
+                "Email",
+                "Teléfono",
+                "Dirección",
+                "Orden",
+            ]
+        )
     records = sheet.get_all_records()
     return pd.DataFrame(records)
 
@@ -34,6 +58,9 @@ def load_agricultores():
 # ✍️ ADD NEW AGRICULTOR
 # -------------------------------------
 def add_agricultor(clave, agricultor, zona, email, telefono, direccion, orden):
+    if sheet is None:
+        st.error("No Google Sheet configured. Entry not saved.")
+        return
     new_row = [clave, agricultor, zona, email, telefono, direccion, orden]
     sheet.append_row(new_row)
 
