@@ -1,68 +1,67 @@
-# -*- coding: utf-8 -*-
-"""
-Spyder Editor
+# =========================================================
+# Main Application Entry Point
+# - Sets up the Streamlit interface
+# - Handles navigation across different modules
+# - Manages authentication and shared services
+# =========================================================
 
-This is a temporary script file.
-"""
 import streamlit as st
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import pandas as pd
+from utils.auth import get_gspread_client
+from utils.auth import get_drive_service
+from config import SHEET_ID, INGRESAR_DATOS_SHEET_ID
 
-# -------------------------------------
-# 🔐 AUTHENTICATION + CLIENT SETUP
-# -------------------------------------
-@st.cache_resource
-def get_gspread_client():
-    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds_dict = st.secrets["gcp_service_account"]
-    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-    return gspread.authorize(creds)
+# Import View Modules
+import views.gestionar_maestros as gestionar_maestros
+import views.ingresar_datos as ingresar_datos
+import views.procesar_datos as procesar_datos
+import views.visualizar_reportes as visualizar_reportes
 
-client = get_gspread_client()
-sheet_id = "17g9aiOf0mK63tWyIfevKaen_8K_vZXzn078zKjzhq9E"
-sheet = client.open_by_key(sheet_id).worksheet("Agricultores")
+# -------------------------
+# Initialize External Services
+# -------------------------
 
-# -------------------------------------
-# 📥 LOAD DATA
-# -------------------------------------
-def load_agricultores():
-    records = sheet.get_all_records()
-    return pd.DataFrame(records)
+# Initialize Google Sheets API client
+gspread_client = get_gspread_client()
 
-# -------------------------------------
-# ✍️ ADD NEW AGRICULTOR
-# -------------------------------------
-def add_agricultor(clave, agricultor, zona, email, telefono, direccion, orden):
-    new_row = [clave, agricultor, zona, email, telefono, direccion, orden]
-    sheet.append_row(new_row)
+# Initialize Google Drive API client
+drive_service = get_drive_service()
 
-# -------------------------------------
-# 🎯 APP UI
-# -------------------------------------
-st.title("📋 Registro de Agricultores")
+# -------------------------
+# Sidebar Navigation Setup
+# -------------------------
 
-st.subheader("📄 Lista actual")
-df = load_agricultores()
-st.dataframe(df)
+# Display a logo or avatar image at the top of the sidebar
+st.sidebar.markdown(
+    """
+    <div style="text-align: center;">
+        <img src="https://24a0ff8439a6c5518b2d-b52a505b3b0736c8f6307a39a7e3ff73.ssl.cf5.rackcdn.com/2300000/2301635/_xsavatar1665423637.jpeg" width="150">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-st.subheader("➕ Añadir nuevo agricultor")
+# Sidebar title and section navigation
+st.sidebar.title("📊 Navegación")
+section = st.sidebar.radio(
+    "Selecciona una sección:",
+    [
+        "🗂️ 1. Gestionar Maestros",
+        "📝 2. Ingresar Datos",
+        "⚙️ 3. Procesar Datos",
+        "📈 4. Ver Reportes"
+    ]
+)
 
-with st.form("add_agricultor_form"):
-    clave = st.text_input("Clave")
-    agricultor = st.text_input("Agricultor")
-    zona = st.text_input("Zona")
-    email = st.text_input("Email")
-    telefono = st.text_input("Teléfono")
-    direccion = st.text_input("Dirección")
-    orden = st.text_input("Orden")
+# -------------------------
+# Main Section Routing
+# -------------------------
 
-    submitted = st.form_submit_button("Guardar")
-
-    if submitted:
-        if all([clave, agricultor, zona, email, telefono, direccion, orden]):
-            add_agricultor(clave, agricultor, zona, email, telefono, direccion, orden)
-            st.success(f"Agricultor '{agricultor}' agregado con éxito ✅")
-            st.rerun()
-        else:
-            st.error("Por favor completa todos los campos.")
+# Route the user to the selected page
+if section == "🗂️ 1. Gestionar Maestros":
+    gestionar_maestros.render(gspread_client, SHEET_ID, drive_service)
+elif section == "📝 2. Ingresar Datos":
+    ingresar_datos.render(gspread_client, INGRESAR_DATOS_SHEET_ID, drive_service)
+elif section == "⚙️ 3. Procesar Datos":
+    procesar_datos.render()
+elif section == "📈 4. Ver Reportes":
+    visualizar_reportes.render(gspread_client, SHEET_ID)
